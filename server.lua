@@ -18,7 +18,6 @@ AddEventHandler('rs_phonograph:server:playMusic', function(uniqueId, coords, url
     TriggerClientEvent('rs_phonograph:client:playMusic', -1, uniqueId, coords, url, volume)
 end)
 
-
 RegisterNetEvent('rs_phonograph:server:stopMusic')
 AddEventHandler('rs_phonograph:server:stopMusic', function(uniqueId)
     currentlyPlaying[uniqueId] = nil
