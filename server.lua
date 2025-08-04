@@ -4,7 +4,10 @@ local currentlyPlaying = {}
 
 RegisterNetEvent('rs_phonograph:server:playMusic')
 AddEventHandler('rs_phonograph:server:playMusic', function(uniqueId, coords, url, volume)
-    if currentlyPlaying[uniqueId] then return end
+
+    if currentlyPlaying[uniqueId] then
+        TriggerClientEvent('rs_phonograph:client:stopMusic', -1, uniqueId)
+    end
 
     currentlyPlaying[uniqueId] = {
         url = url,
