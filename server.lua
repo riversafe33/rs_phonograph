@@ -18,6 +18,7 @@ AddEventHandler('rs_phonograph:server:playMusic', function(uniqueId, coords, url
     TriggerClientEvent('rs_phonograph:client:playMusic', -1, uniqueId, coords, url, volume)
 end)
 
+
 RegisterNetEvent('rs_phonograph:server:stopMusic')
 AddEventHandler('rs_phonograph:server:stopMusic', function(uniqueId)
     currentlyPlaying[uniqueId] = nil
@@ -89,6 +90,44 @@ AddEventHandler('rs_phonograph:server:saveOwner', function(coords, rotation)
     end)
 end)
 
+loadedPhonographs = {}
+
+function cachePhonographs()
+    exports.oxmysql:execute('SELECT * FROM phonographs', {}, function(results)
+        if results then
+            for _, row in pairs(results) do
+                local phonographData = {
+                    id = row.id,
+                    x = row.x,
+                    y = row.y,
+                    z = row.z,
+                    rotation = {
+                        x = row.rot_x,
+                        y = row.rot_y,
+                        z = row.rot_z,
+                    }
+                }
+                table.insert(loadedPhonographs, phonographData)
+            end
+        end
+    end)
+end
+
+AddEventHandler('onResourceStart', function(resource)
+    if GetCurrentResourceName() ~= resource then return end
+    cachePhonographs()
+end)
+
+RegisterNetEvent("rs_phonograph:server:sendToPlayer")
+AddEventHandler("rs_phonograph:server:sendToPlayer", function()
+    local src = source
+    if type(loadedPhonographs) == "table" then
+        for _, phonograph in pairs(loadedPhonographs) do
+            TriggerClientEvent("rs_phonograph:client:spawnPhonograph", src, phonograph)
+        end
+    end
+end)
+
 RegisterNetEvent('rs_phonograph:server:pickUpByOwner')
 AddEventHandler('rs_phonograph:server:pickUpByOwner', function(uniqueId)
     local src = source
@@ -116,9 +155,18 @@ AddEventHandler('rs_phonograph:server:pickUpByOwner', function(uniqueId)
                 if distance <= 2.5 then
                     TriggerClientEvent('rs_phonograph:client:removePhonograph', -1, uniqueId)
 
-                    if currentlyPlaying[uniqueId] then
+                    if currentlyPlaying and currentlyPlaying[uniqueId] then
                         TriggerClientEvent('rs_phonograph:client:stopMusic', -1, uniqueId)
                         currentlyPlaying[uniqueId] = nil
+                    end
+
+                    if type(loadedPhonographs) == "table" then
+                        for i, phonograph in ipairs(loadedPhonographs) do
+                            if phonograph.id == uniqueId then
+                                table.remove(loadedPhonographs, i)
+                                break
+                            end
+                        end
                     end
 
                     exports.oxmysql:execute(
@@ -127,11 +175,13 @@ AddEventHandler('rs_phonograph:server:pickUpByOwner', function(uniqueId)
                         function(result)
                             local affected = result and (result.affectedRows or result.affected_rows or result.changes)
                             if affected and affected > 0 then
-                                VorpInv.addItem(src, Config.PhonoItems, 1)
+                                VorpInv.addItem(src, "phonograph", 1)
                                 VORPcore.NotifyLeft(src, Config.Text.Phono, Config.Text.Picked, "generic_textures", "tick", 4000, "GREEN")
                             end
                         end
                     )
+                else
+                    VORPcore.NotifyLeft(src, Config.Text.Phono, Config.Text.TooFar, "menu_textures", "cross", 3000, "COLOR_RED")
                 end
             else
                 VORPcore.NotifyLeft(src, Config.Text.Phono, Config.Text.Dont, "menu_textures", "cross", 3000, "COLOR_RED")
@@ -140,34 +190,7 @@ AddEventHandler('rs_phonograph:server:pickUpByOwner', function(uniqueId)
     )
 end)
 
-local function loadPhonographs(targetPlayer)
-    exports.oxmysql:execute('SELECT * FROM phonographs', {}, function(results)
-        if results then
-            for _, row in pairs(results) do
-                local phonographData = {
-                    id = row.id,
-                    x = row.x,
-                    y = row.y,
-                    z = row.z,
-                    rotation = {
-                        x = row.rot_x,
-                        y = row.rot_y,
-                        z = row.rot_z,
-                    }
-                }
-                TriggerClientEvent('rs_phonograph:client:spawnPhonograph', targetPlayer, phonographData)
-            end
-        end
-    end)
-end
-
-RegisterNetEvent('rs_phonograph:server:loadPhonographs')
-AddEventHandler('rs_phonograph:server:loadPhonographs', function()
-    local src = source
-    loadPhonographs(src)
-end)
-
-VorpInv.RegisterUsableItem(Config.PhonoItems, function(data)
+VorpInv.RegisterUsableItem("phonograph", function(data)
     local src = data.source
     local User = VORPcore.getUser(src)
     if not User then return end
@@ -191,5 +214,5 @@ end)
 
 RegisterNetEvent("rs_phonograph:givePhonograph", function()
     local src = source
-    VorpInv.subItem(src, Config.PhonoItems, 1)
+    VorpInv.subItem(src, "phonograph", 1)
 end)
