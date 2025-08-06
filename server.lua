@@ -1,6 +1,7 @@
 local VORPcore = exports.vorp_core:GetCore()
 local VorpInv = exports.vorp_inventory:vorp_inventoryApi()
 local currentlyPlaying = {}
+loadedPhonographs = {}
 
 RegisterNetEvent('rs_phonograph:server:playMusic')
 AddEventHandler('rs_phonograph:server:playMusic', function(uniqueId, coords, url, volume)
@@ -84,14 +85,15 @@ AddEventHandler('rs_phonograph:server:saveOwner', function(coords, rotation)
                 }
             }
 
+            table.insert(loadedPhonographs, phonographData)
+
             TriggerClientEvent('rs_phonograph:client:updatePhonographId', -1, result.insertId)
         end
     end)
 end)
 
-loadedPhonographs = {}
-
 function cachePhonographs()
+    loadedPhonographs = {}
     exports.oxmysql:execute('SELECT * FROM phonographs', {}, function(results)
         if results then
             for _, row in pairs(results) do
