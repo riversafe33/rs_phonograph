@@ -20,7 +20,6 @@ shared_scripts {
 }
 
 client_scripts {
-    "@uiprompt/uiprompt.lua",
     'client.lua',
 }
 
