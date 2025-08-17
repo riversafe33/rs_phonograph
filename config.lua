@@ -6,6 +6,11 @@ Config.Promp = {
     Play = "Play Music",
     Collect = "Collect",
     Controls = "Phonograph",
+
+    Keys = {
+        Play = 0x760A9C6F,
+        Collect = 0xE30CD707,
+    }
 }
 
 Config.Text = {
