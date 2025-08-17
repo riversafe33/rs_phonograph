@@ -3,7 +3,6 @@ Phonograph Placement & Music Playback Script
 
 Make sure to download and ensure xsound so that the phonograph works properly  
 Dependency
-https://github.com/riversafe33/uiprompt
 https://github.com/riversafe33/xsound
 
 
