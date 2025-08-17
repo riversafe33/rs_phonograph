@@ -159,28 +159,39 @@ local function OpenPhonographMenu(entity, uniqueId)
     end)
 end
 
-local promptGroup = UipromptGroup:new(Config.Promp.Controls)
-
-local playMusicPrompt = Uiprompt:new(`INPUT_DYNAMIC_SCENARIO`, Config.Promp.Play, promptGroup)
-playMusicPrompt:setHoldMode(true)
-
-local pickUpPrompt = Uiprompt:new(`INPUT_RELOAD`, Config.Promp.Collect, promptGroup)
-pickUpPrompt:setHoldMode(true)
-
-local closestEntity = nil
-local closestId = nil
-local pendingPhonographObject = nil
+local playMusicPrompt, pickUpPrompt
+local promptGroup = GetRandomIntInRange(0, 0xffffff)
+local closestEntity, closestId, pendingPhonographObject
 phonographEntities = {}
 
+local function createPrompts()
+
+    playMusicPrompt = PromptRegisterBegin()
+    PromptSetControlAction(playMusicPrompt, Config.Promp.Keys.Play)
+    PromptSetText(playMusicPrompt, CreateVarString(10, "LITERAL_STRING", Config.Promp.Play))
+    PromptSetEnabled(playMusicPrompt, true)
+    PromptSetVisible(playMusicPrompt, true)
+    PromptSetHoldMode(playMusicPrompt, true)
+    PromptSetGroup(playMusicPrompt, promptGroup)
+    PromptRegisterEnd(playMusicPrompt)
+
+    pickUpPrompt = PromptRegisterBegin()
+    PromptSetControlAction(pickUpPrompt, Config.Promp.Keys.Collect)
+    PromptSetText(pickUpPrompt, CreateVarString(10, "LITERAL_STRING", Config.Promp.Collect))
+    PromptSetEnabled(pickUpPrompt, true)
+    PromptSetVisible(pickUpPrompt, true)
+    PromptSetHoldMode(pickUpPrompt, true)
+    PromptSetGroup(pickUpPrompt, promptGroup)
+    PromptRegisterEnd(pickUpPrompt)
+end
 
 local function clearAllPhonographs()
     for id, entity in pairs(phonographEntities) do
-        if DoesEntityExist(entity) and NetworkGetEntityIsNetworked(entity) then
+        if DoesEntityExist(entity) then
             DeleteObject(entity)
         end
     end
     phonographEntities = {}
-
     if lastPlacedPhonograph and lastPlacedPhonograph.entity and DoesEntityExist(lastPlacedPhonograph.entity) then
         DeleteObject(lastPlacedPhonograph.entity)
     end
@@ -191,106 +202,50 @@ local function updatePrompts()
     local playerPed = PlayerPedId()
     local playerCoords = GetEntityCoords(playerPed)
     closestEntity, closestId = nil, nil
-    local found = false
 
     for uniqueId, entity in pairs(phonographEntities or {}) do
         if DoesEntityExist(entity) then
-            local entityCoords = GetEntityCoords(entity)
-            local distance = #(playerCoords - entityCoords)
+            local distance = #(playerCoords - GetEntityCoords(entity))
             if distance <= 2.5 then
                 closestEntity = entity
                 closestId = uniqueId
-                found = true
                 break
             end
         end
     end
 
-    if not found and pendingPhonographObject and DoesEntityExist(pendingPhonographObject) then
-        local distance = #(playerCoords - GetEntityCoords(pendingPhonographObject))
-        if distance <= 2.5 then
+    if not closestEntity and pendingPhonographObject and DoesEntityExist(pendingPhonographObject) then
+        if #(playerCoords - GetEntityCoords(pendingPhonographObject)) <= 2.5 then
             closestEntity = pendingPhonographObject
             closestId = nil
-            found = true
         end
     end
-
-    promptGroup:setActive(found)
-    playMusicPrompt:setVisible(found)
-    playMusicPrompt:setEnabled(found)
-    pickUpPrompt:setVisible(found)
-    pickUpPrompt:setEnabled(found)
 end
 
-RegisterNetEvent('rs_phonograph:client:spawnPhonograph')
-AddEventHandler('rs_phonograph:client:spawnPhonograph', function(data)
-    local propModel = `p_phonograph01x`
-    local x, y, z = data.x, data.y, data.z
-    local rotZ = tonumber(data.rotation.z or 0.0) % 360.0
-    local uniqueId = data.id
-
-    RequestModel(propModel)
-    while not HasModelLoaded(propModel) do Wait(10) end
-
-    if phonographEntities[uniqueId] and DoesEntityExist(phonographEntities[uniqueId]) then
-        DeleteObject(phonographEntities[uniqueId])
-    end
-
-    local object = CreateObject(propModel, 0.0, 0.0, 0.0, true, false, true)
-    SetEntityCoordsNoOffset(object, x, y, z, false, false, false)
-    SetEntityHeading(object, rotZ)
-    FreezeEntityPosition(object, true)
-    SetEntityAsMissionEntity(object, true, true)
-
-    phonographEntities[uniqueId] = object
-
-    CreateThread(function()
-        Wait(1000)
-        updatePrompts()
-    end)
-end)
-
-RegisterNetEvent('rs_phonograph:client:updatePhonographId')
-AddEventHandler('rs_phonograph:client:updatePhonographId', function(id)
-    if lastPlacedPhonograph and lastPlacedPhonograph.entity then
-        phonographEntities[id] = lastPlacedPhonograph.entity
-        lastPlacedPhonograph.id = id
-
-        if pendingPhonographObject == lastPlacedPhonograph.entity then
-            pendingPhonographObject = nil
-        end
-
-        CreateThread(function()
-            Wait(100)
-            updatePrompts()
-        end)
-    end
-end)
-
-promptGroup:setOnHoldModeJustCompleted(function(group, prompt)
-    if closestEntity and DoesEntityExist(closestEntity) then
-        if prompt == playMusicPrompt then
-            if closestId then
-                OpenPhonographMenu(closestEntity, closestId)
-            else
-                TriggerEvent("vorp:NotifyLeft", Config.Notify.Phono, Config.Notify.UnregisteredMessage, "generic_textures", "tick", 3000, "GREEN")
-            end
-        elseif prompt == pickUpPrompt then
-            if closestId then
-                TriggerServerEvent('rs_phonograph:server:pickUpByOwner', closestId)
-            else
-                TriggerEvent("vorp:NotifyLeft", Config.Notify.Phono, Config.Notify.UnregisteredMessage, "generic_textures", "tick", 3000, "GREEN")
-            end
-        end
-    else
-        TriggerEvent("vorp:NotifyLeft", Config.Notify.Phono, Config.Notify.NoPhonographMessage, "menu_textures", "cross", 3000, "COLOR_RED")
-    end
-end)
-
 CreateThread(function()
+    createPrompts()
+
     while true do
-        Wait(500)
+        Wait(0) 
         updatePrompts()
+
+        if closestEntity then
+            PromptSetActiveGroupThisFrame(promptGroup, CreateVarString(10, "LITERAL_STRING", Config.Promp.Controls))
+
+            if PromptHasHoldModeCompleted(playMusicPrompt) then
+                if closestId then
+                    OpenPhonographMenu(closestEntity, closestId)
+                else
+                    TriggerEvent("vorp:NotifyLeft", Config.Notify.Phono, Config.Notify.UnregisteredMessage, "generic_textures", "tick", 3000, "GREEN")
+                end
+            elseif PromptHasHoldModeCompleted(pickUpPrompt) then
+                if closestId then
+                    TriggerServerEvent('rs_phonograph:server:pickUpByOwner', closestId)
+                else
+                    TriggerEvent("vorp:NotifyLeft", Config.Notify.Phono, Config.Notify.UnregisteredMessage, "generic_textures", "tick", 3000, "GREEN")
+                end
+            end
+        end
     end
 end)
 
@@ -298,11 +253,36 @@ RegisterNetEvent("vorp:SelectedCharacter")
 AddEventHandler("vorp:SelectedCharacter", function()
     clearAllPhonographs()
     TriggerServerEvent("rs_phonograph:server:sendToPlayer")
-    Wait(1000)
-    updatePrompts()
 end)
 
-UipromptManager:startEventThread()
+RegisterNetEvent('rs_phonograph:client:spawnPhonograph')
+AddEventHandler('rs_phonograph:client:spawnPhonograph', function(data)
+    local propModel = `p_phonograph01x`
+    RequestModel(propModel)
+    while not HasModelLoaded(propModel) do Wait(10) end
+
+    if phonographEntities[data.id] and DoesEntityExist(phonographEntities[data.id]) then
+        DeleteObject(phonographEntities[data.id])
+    end
+
+    local object = CreateObject(propModel, data.x, data.y, data.z, true, false, true)
+    SetEntityHeading(object, tonumber(data.rotation.z or 0.0) % 360.0)
+    FreezeEntityPosition(object, true)
+    SetEntityAsMissionEntity(object, true, true)
+
+    phonographEntities[data.id] = object
+end)
+
+RegisterNetEvent('rs_phonograph:client:updatePhonographId')
+AddEventHandler('rs_phonograph:client:updatePhonographId', function(id)
+    if lastPlacedPhonograph and lastPlacedPhonograph.entity then
+        phonographEntities[id] = lastPlacedPhonograph.entity
+        lastPlacedPhonograph.id = id
+        if pendingPhonographObject == lastPlacedPhonograph.entity then
+            pendingPhonographObject = nil
+        end
+    end
+end)
 
 RegisterNetEvent('rs_phonograph:client:placePropPhonograph')
 AddEventHandler('rs_phonograph:client:placePropPhonograph', function()
