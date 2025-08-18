@@ -171,7 +171,7 @@ local function createPrompts()
     PromptSetText(playMusicPrompt, CreateVarString(10, "LITERAL_STRING", Config.Promp.Play))
     PromptSetEnabled(playMusicPrompt, true)
     PromptSetVisible(playMusicPrompt, true)
-    PromptSetHoldMode(playMusicPrompt, true)
+    PromptSetStandardMode(playMusicPrompt, true)
     PromptSetGroup(playMusicPrompt, promptGroup)
     PromptRegisterEnd(playMusicPrompt)
 
@@ -232,7 +232,7 @@ CreateThread(function()
         if closestEntity then
             PromptSetActiveGroupThisFrame(promptGroup, CreateVarString(10, "LITERAL_STRING", Config.Promp.Controls))
 
-            if PromptHasHoldModeCompleted(playMusicPrompt) then
+            if PromptHasStandardModeCompleted(playMusicPrompt) then
                 if closestId then
                     OpenPhonographMenu(closestEntity, closestId)
                 else
