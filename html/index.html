@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controls Panel</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .nui {
+            position: fixed;
+            bottom: 36px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.9); 
+            border: 2px solid #916b3abe;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            width: auto;
+            max-width: 300px;
+            color: #916b3abe;
+            text-align: right;
+            display: none; 
+            overflow: auto;
+        }
+        .nui h4 {
+            margin: 0 0 10px;
+            font-size: 26px;
+            color: #916b3abe;
+            text-align: left;
+        }
+        .nui p {
+            margin: 5px 0;
+            font-size: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="nui" id="controlPanel">
+        <h4>Controls</h4>
+        <p>[← ↑ ↓ →] - Move object</p>
+        <p>[1/2]     - Rotate object</p>
+        <p>[7/8]     - Move up/down</p>
+        <p>[ENTER]   - Confirm position</p>
+        <p>[G]       - Cancel placement</p>
+        <p>[3]       - Adjust speed</p>
+    </div>
+
+    <script>
+        
+        window.addEventListener('message', function(event) {
+            const controlPanel = document.getElementById('controlPanel');
+            if (event.data.action === "show") {
+                controlPanel.style.display = 'block';
+            } else if (event.data.action === "hide") {
+                controlPanel.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
