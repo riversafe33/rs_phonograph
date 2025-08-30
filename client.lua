@@ -224,12 +224,12 @@ AddEventHandler('rs_phonograph:client:spawnPhonograph', function(data)
     local rotZ = tonumber(data.rotation.z or 0.0) % 360.0
     local uniqueId = data.id
 
+    if phonographEntities[uniqueId] and DoesEntityExist(phonographEntities[uniqueId]) then
+        return
+    end
+
     RequestModel(propModel)
     while not HasModelLoaded(propModel) do Wait(10) end
-
-    if phonographEntities[uniqueId] and DoesEntityExist(phonographEntities[uniqueId]) then
-        DeleteObject(phonographEntities[uniqueId])
-    end
 
     local object = CreateObject(propModel, x, y, z, true, false, true)
     SetEntityHeading(object, rotZ)
@@ -347,19 +347,18 @@ AddEventHandler('rs_phonograph:client:placePropPhonograph', function()
             if IsControlJustPressed(0, 0xC7B5340A) then
 
                 isPlacing = false
-                FreezeEntityPosition(tempObject, true)
-                SetEntityAlpha(tempObject, 255, false)
-                SetEntityCollision(tempObject, true, true)
                 SendNUIMessage({ action = "hide" })
 
                 local pos = GetEntityCoords(tempObject)
                 local rot = vector3(0.0, 0.0, GetEntityHeading(tempObject))
 
-                TriggerServerEvent('rs_phonograph:server:saveOwner', pos, rot)
-                TriggerServerEvent("rs_phonograph:givePhonograph")
-
                 DeleteObject(tempObject)
                 lastPlacedPhonograph = nil
+
+                Wait(1000)
+
+                TriggerServerEvent('rs_phonograph:server:saveOwner', pos, rot)
+                TriggerServerEvent("rs_phonograph:givePhonograph")
 
                 updatePrompts()
                 TriggerEvent("vorp:NotifyLeft", Config.Notify.Phono, Config.Notify.Place, "generic_textures", "tick", 500, "GREEN")
