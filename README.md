@@ -1,3 +1,5 @@
+To improve my PC and continue offering free scripts: https://ko-fi.com/riversafe33
+
 Phonograph Placement & Music Playback Script
 
 Make sure to download and ensure xsound so that the phonograph works properly
