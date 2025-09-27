@@ -404,12 +404,12 @@ AddEventHandler('rs_phonograph:client:playMusic', function(uniqueId, coords, url
     end
 
     exports.xsound:PlayUrlPos(soundName, url, volume, coords)
-    exports.xsound:Distance(soundName, 10)
+    exports.xsound:Distance(soundName, Config.SoundDistance)
 
     if Config.WithEffect then
         local effectVolume = volume * Config.VolumeEffect
         exports.xsound:PlayUrlPos(effectSoundName, "https://www.youtube.com/watch?v=m5Mz9Tqs9CE", effectVolume, coords)
-        exports.xsound:Distance(effectSoundName, 10)
+        exports.xsound:Distance(effectSoundName, Config.SoundDistance)
     end
 
     if exports.xsound.onPlayEnd then
