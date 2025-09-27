@@ -54,6 +54,7 @@ Config.Notify = {
     TooFar = "Too far to pick up the phonograph",
 }
 
+Config.SoundDistance = 10      -- Maximum audible distance for the music
 Config.WithEffect = false      -- Set to true if you want the sound effect to play
 Config.VolumeEffect = 0.3      -- Change the effect volume here
 Config.AllowCustomSongs = true -- If set to false, people will not be able to play their own songs, only those from the Choose a Song list
