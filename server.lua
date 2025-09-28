@@ -31,15 +31,6 @@ AddEventHandler('rs_phonograph:server:soundEnded', function(uniqueId)
     currentlyPlaying[uniqueId] = nil
 end)
 
-RegisterServerEvent('rs_phonograph:server:sendCurrentMusic')
-AddEventHandler('rs_phonograph:server:sendCurrentMusic', function()
-    local src = source
-
-    for uniqueId, musicData in pairs(currentlyPlaying) do
-        TriggerClientEvent('rs_phonograph:client:playMusic', src, uniqueId, musicData.coords, musicData.url, musicData.volume)
-    end
-end)
-
 local loadedPhonographs = {}
 
 AddEventHandler('onResourceStart', function(resource)
